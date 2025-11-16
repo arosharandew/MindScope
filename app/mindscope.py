@@ -14,7 +14,6 @@ class DementiaRiskPredictor:
             self.feature_names = self.package['feature_names']
             print("Model loaded successfully!")
             print(f"Model: {self.package.get('model_name', 'LightGBM')}")
-            print(f"Expected features: {len(self.feature_names)}")
         except Exception as e:
             print(f"Error loading model: {e}")
             raise
@@ -22,26 +21,21 @@ class DementiaRiskPredictor:
     def predict_risk(self, user_responses):
         try:
             feature_vector = self._create_feature_vector(user_responses)
-
-            # Debug: Check feature dimensions
-            print(f"Created features: {feature_vector.shape[1]}")
-            print(f"Model expects: {len(self.feature_names)}")
-
             probability = self.model.predict_proba(feature_vector)[0, 1]
-            risk_level = self._classify_risk(probability)
+
+            # Binary classification: At risk or Not at risk
+            risk_label = "At risk" if probability > 0.5 else "Not at risk"
 
             return {
                 'risk_percentage': round(probability * 100, 2),
-                'risk_level': risk_level,
-                'probability': probability,
-                'key_factors': self._get_key_factors(user_responses)
+                'risk_label': risk_label,
+                'probability': probability
             }
         except Exception as e:
             print(f"Prediction error: {e}")
             return None
 
     def _create_feature_vector(self, responses):
-        # Start with zeros ONLY for the features the model expects
         features = pd.DataFrame(0, index=[0], columns=self.feature_names)
 
         # Map responses to available features
@@ -56,7 +50,6 @@ class DementiaRiskPredictor:
         return features
 
     def _get_feature_mapping(self):
-        # Map questionnaire responses to actual feature names in the model
         return {
             'age': 'NACCAGE',
             'education': 'EDUC',
@@ -68,41 +61,9 @@ class DementiaRiskPredictor:
             'phone_calls': 'INCALLS',
             'tobacco_use': 'TOBAC30',
             'alcohol_frequency': 'ALCFREQ',
-            'sex_male': 'SEX',  # Will be set to 1 for male, 2 for female
+            'sex_male': 'SEX',
             'family_dementia': 'NACCFAM'
         }
-
-    def _classify_risk(self, probability):
-        if probability < 0.3:
-            return "Low Risk"
-        elif probability < 0.7:
-            return "Medium Risk"
-        else:
-            return "High Risk"
-
-    def _get_key_factors(self, responses):
-        factors = []
-
-        age = responses.get('age', 0)
-        if age > 75:
-            factors.append("Age-related risk")
-        elif age > 65:
-            factors.append("Advanced age")
-
-        if responses.get('bills_difficulty', 0) > 2:
-            factors.append("Difficulty managing finances")
-        if responses.get('shopping_difficulty', 0) > 2:
-            factors.append("Difficulty with shopping")
-        if responses.get('meal_prep_difficulty', 0) > 2:
-            factors.append("Difficulty preparing meals")
-
-        if responses.get('social_visits', 0) >= 4:
-            factors.append("Limited social engagement")
-
-        if responses.get('tobacco_use', 0) == 3:  # Current smoker
-            factors.append("Current tobacco use")
-
-        return factors[:3]
 
 
 def conduct_questionnaire():
@@ -113,7 +74,6 @@ def conduct_questionnaire():
 
     responses = {}
 
-    # 1. Age
     while True:
         try:
             age = int(input("1. What is your age? "))
@@ -125,7 +85,6 @@ def conduct_questionnaire():
         except ValueError:
             print("Please enter a number")
 
-    # 2. Sex (store as numeric)
     print("\n2. What is your biological sex?")
     print("   1. Male")
     print("   2. Female")
@@ -140,7 +99,6 @@ def conduct_questionnaire():
         else:
             print("Please enter 1 or 2")
 
-    # 3. Education
     print("\n3. What is the highest number of years of education completed?")
     print("   (e.g., 12 = high school, 16 = college, 18 = masters, etc.)")
     while True:
@@ -154,7 +112,6 @@ def conduct_questionnaire():
         except ValueError:
             print("Please enter a number")
 
-    # 4-6. Daily activities
     activity_questions = {
         'bills_difficulty': "managing finances and paying bills",
         'shopping_difficulty': "shopping for groceries or personal items",
@@ -179,7 +136,6 @@ def conduct_questionnaire():
             except ValueError:
                 print("Please enter a number 1-4")
 
-    # 7. Independence level
     print("\n7. Overall, how independent are you in daily activities?")
     print("   1 - Completely independent")
     print("   2 - Mostly independent")
@@ -196,7 +152,6 @@ def conduct_questionnaire():
         except ValueError:
             print("Please enter a number 1-4")
 
-    # 8-9. Social engagement
     print("\n8-9. How often do you (1-5):")
     print("   1 - Daily")
     print("   2 - Several times weekly")
@@ -226,7 +181,6 @@ def conduct_questionnaire():
         except ValueError:
             print("Please enter a number 1-5")
 
-    # 10. Tobacco use
     print("\n10. Do you currently smoke or have you smoked regularly in the past?")
     print("    1. Never smoked")
     print("    2. Former smoker")
@@ -239,7 +193,6 @@ def conduct_questionnaire():
         else:
             print("Please enter 1, 2, or 3")
 
-    # 11. Alcohol frequency
     print("\n11. How often do you drink alcohol?")
     print("    1. Never")
     print("    2. Occasionally (monthly)")
@@ -253,7 +206,6 @@ def conduct_questionnaire():
         else:
             print("Please enter 1, 2, 3, or 4")
 
-    # 12. Family history (store as numeric: 1 for Yes, 0 for No)
     print("\n12. Has anyone in your immediate family (parents, siblings) been diagnosed with dementia?")
     while True:
         family = input("   (Y)es or (N)o: ").strip().lower()
@@ -275,48 +227,45 @@ def conduct_questionnaire():
 
 def display_results(prediction):
     print("\n" + "=" * 60)
-    print("YOUR DEMENTIA RISK ASSESSMENT RESULTS")
+    print("DEMENTIA RISK ASSESSMENT RESULTS")
     print("=" * 60)
 
-    print(f"\nESTIMATED RISK: {prediction['risk_percentage']}%")
-    print(f"   (Based on people with similar profiles)")
+    print(f"\nYour estimated risk of having dementia is {prediction['risk_percentage']}%")
+    print(f"Classification: {prediction['risk_label']}")
 
-    print(f"\nCLASSIFICATION: {prediction['risk_level']}")
-
-    if prediction['key_factors']:
-        print(f"\nKEY FACTORS INFLUENCING YOUR RISK:")
-        for factor in prediction['key_factors']:
-            print(f"   * {factor}")
+    print(f"\nEXPLANATION:")
+    if prediction['risk_label'] == "Not at risk":
+        print("Based on your responses, your risk of dementia is below the concerning threshold.")
+        print("This suggests that your current lifestyle and health factors are associated")
+        print("with lower dementia risk compared to the general population.")
+    else:
+        print("Based on your responses, your risk of dementia is above the concerning threshold.")
+        print("This suggests that some of your current factors may be associated with")
+        print("higher dementia risk compared to the general population.")
 
     print(f"\nRECOMMENDATIONS:")
-    if prediction['risk_level'] == "Low Risk":
-        print("   * Continue maintaining healthy lifestyle habits")
-        print("   * Stay socially active and engaged")
-        print("   * Regular physical activity is beneficial")
-        print("   * Annual health check-ups are recommended")
-
-    elif prediction['risk_level'] == "Medium Risk":
-        print("   * Consider discussing cognitive health with your doctor")
-        print("   * Increase social and mental activities")
-        print("   * Manage lifestyle factors carefully")
-        print("   * Regular exercise and balanced diet are important")
-
+    if prediction['risk_label'] == "Not at risk":
+        print("* Continue maintaining healthy lifestyle habits")
+        print("* Stay socially active and mentally engaged")
+        print("* Regular physical activity and balanced nutrition")
+        print("* Annual health check-ups to monitor your wellbeing")
     else:
-        print("   * Consult with a healthcare provider for proper assessment")
-        print("   * Consider comprehensive cognitive screening")
-        print("   * Focus on improving social connections")
-        print("   * Maintain mental stimulation and physical activity")
-        print("   * Regular medical follow-ups are strongly recommended")
+        print("* Consult with a healthcare provider for proper assessment")
+        print("* Consider cognitive screening during your next medical visit")
+        print("* Focus on improving cardiovascular health and social connections")
+        print("* Maintain regular physical activity and mental stimulation")
+        print("* Manage any lifestyle factors that may contribute to risk")
 
     print("\n" + "=" * 60)
-    print("Remember: This is a screening tool, not a medical diagnosis.")
-    print("   Always consult healthcare professionals for medical advice.")
+    print("Important: This is a screening tool for educational purposes.")
+    print("It is not a medical diagnosis. Always consult healthcare")
+    print("professionals for medical advice and proper assessment.")
     print("=" * 60)
 
 
 def main():
     print("Welcome to MindScope Dementia Risk Assessment")
-    print("   Using machine learning for early risk detection\n")
+    print("A machine learning based screening tool\n")
 
     MODEL_PATH = r"../results/models/final_deployment_model.pkl"
 
@@ -332,10 +281,9 @@ def main():
                 for i, model_file in enumerate(model_files, 1):
                     print(f"   {i}. {model_file.name}")
 
-                # Try to use the first available model
                 if model_files:
                     MODEL_PATH = str(model_files[0])
-                    print(f"\nTrying to use: {MODEL_PATH}")
+                    print(f"\nUsing: {MODEL_PATH}")
             else:
                 print("No .pkl model files found in models directory")
                 return

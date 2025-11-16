@@ -14,12 +14,10 @@ class PathConfig:
         self.data_dir = self.root_dir / "data"
         self.raw_data_dir = self.data_dir / "raw"
         self.processed_data_dir = self.data_dir / "processed"
-        self.external_data_dir = self.data_dir / "external"
 
         # Results paths
         self.results_dir = self.root_dir / "results"
         self.models_dir = self.results_dir / "models"
-        self.visuals_dir = self.results_dir / "visuals"
         self.reports_dir = self.results_dir / "reports"
 
         # Source code paths
@@ -37,11 +35,7 @@ class PathConfig:
         directories = [
             self.raw_data_dir,
             self.processed_data_dir,
-            self.external_data_dir,
             self.models_dir,
-            self.visuals_dir / "eda",
-            self.visuals_dir / "feature_importance",
-            self.visuals_dir / "model_performance",
             self.reports_dir,
             self.src_dir,
             self.notebooks_dir
