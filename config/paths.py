@@ -49,7 +49,7 @@ class PathConfig:
 
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
-            print(f" Created: {directory}")
+            print(f"Created: {directory}")
 
 
 # Create global config instance

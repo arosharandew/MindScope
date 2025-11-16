@@ -26,9 +26,6 @@ NON_MEDICAL_FEATURES = [
     # Lifestyle Factors
     'TOBAC30', 'SMOKYRS', 'ALCFREQ',
 
-    # Self-reported Medical History
-    'CVHATT', 'CBSTROKE', 'DIABETES', 'HYPERTEN', 'HYPERCHO',
-
     # Functional Abilities (ADLs)
     'BILLS', 'SHOPPING', 'MEALPREP'
 ]
