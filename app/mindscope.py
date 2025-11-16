@@ -23,7 +23,6 @@ class DementiaRiskPredictor:
             feature_vector = self._create_feature_vector(user_responses)
             probability = self.model.predict_proba(feature_vector)[0, 1]
 
-            # Binary classification: At risk or Not at risk
             risk_label = "At risk" if probability > 0.5 else "Not at risk"
 
             return {
@@ -38,7 +37,6 @@ class DementiaRiskPredictor:
     def _create_feature_vector(self, responses):
         features = pd.DataFrame(0, index=[0], columns=self.feature_names)
 
-        # Map responses to available features
         feature_mapping = self._get_feature_mapping()
 
         for response_key, value in responses.items():
